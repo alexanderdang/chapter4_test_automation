@@ -1,15 +1,18 @@
 package base;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import com.google.common.io.Files;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.openqa.selenium.support.events.EventFiringWebDriver;
+import org.testng.ITestResult;
+import org.testng.annotations.*;
 import pages.HomePage;
+import utils.EventReporter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /*
 Overview
@@ -22,18 +25,43 @@ Overview
 
 public class BaseTests {
 
-    private WebDriver driver;
+    //private WebDriver driver; - replaced by EventFiringWebDriver implementation
+    private EventFiringWebDriver driver;
     protected HomePage homePage;
+
+    @BeforeMethod
+    public void goHome(){
+        driver.get("https://the-internet.herokuapp.com/");
+        homePage = new HomePage(driver);
+    }
+
+    @AfterMethod
+    public void recordFailure(ITestResult result){
+        if(ITestResult.FAILURE == result.getStatus()) {
+            var camera = (TakesScreenshot) driver;
+            File screenshot = camera.getScreenshotAs(OutputType.FILE);
+            System.out.println("Screenshot taken: " + screenshot.getAbsolutePath());
+            try {
+                Files.move(screenshot, new File("resources/screenshots/"+ result.getName() + ".png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     @BeforeClass
     public void setUp(){
         System.setProperty("webdriver.chrome.driver", "resources/chromedriver.exe");
+        //driver = new ChromeDriver(); - replaced by EventFiringWebDriver implementation
+        driver = new EventFiringWebDriver(new ChromeDriver());
+        driver.register(new EventReporter());
+        //driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS)
+        goHome();
 
-        driver = new ChromeDriver();
+        /* Not needed after adding goHome()
         driver.get("https://the-internet.herokuapp.com/");
-
         homePage = new HomePage(driver);
-        //Provides handle to HomePage because we are on that page. Istantiates HomePage object from the framework section
+        */
 
         /* Commented-out code block below should be in framework section
         List<WebElement> links = driver.findElements(By.tagName("a"));
@@ -76,11 +104,6 @@ public class BaseTests {
         test.setUp();
     }
     */
-
-    public void loadHome(){ //Is this not good? Ok without instantiating in method
-
-        driver.get("https://the-internet.herokuapp.com/");
-    }
 
     /* Unsure if better to put in new method and re-instantiate
     public void chapterExercise(){
