@@ -26,9 +26,7 @@ public class DynamicLoadingExample2Page {
         return driver.findElement(loadedText).getText();
     }
 
-    /* Extra unused code
     public boolean isStartButtonDisplayed(){
         return driver.findElement(startButton).isDisplayed();
     }
-     */
 }

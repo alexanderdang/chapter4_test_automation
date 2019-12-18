@@ -3,11 +3,14 @@ package base;
 import com.google.common.io.Files;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 import org.testng.ITestResult;
 import org.testng.annotations.*;
 import pages.HomePage;
+import utils.CookieManager;
 import utils.EventReporter;
+import utils.WindowManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,10 +56,13 @@ public class BaseTests {
     public void setUp(){
         System.setProperty("webdriver.chrome.driver", "resources/chromedriver.exe");
         //driver = new ChromeDriver(); - replaced by EventFiringWebDriver implementation
-        driver = new EventFiringWebDriver(new ChromeDriver());
+        //driver = new EventFiringWebDriver(new ChromeDriver()); - altered by instantiating ChromeDriver with constructor taking in ChromeOptions object
+        driver = new EventFiringWebDriver(new ChromeDriver(getChromeOptions()));
+
         driver.register(new EventReporter());
         //driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS)
         goHome();
+        setCookie();
 
         /* Not needed after adding goHome()
         driver.get("https://the-internet.herokuapp.com/");
@@ -117,4 +123,26 @@ public class BaseTests {
         exampleOneLink.click();
     }
      */
+
+    public WindowManager getWindowManager(){
+        return new WindowManager(driver);
+    }
+
+    public CookieManager getCookieManager(){
+        return new CookieManager(driver);
+    }
+
+    private ChromeOptions getChromeOptions(){
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("disable-infobars"); //"disable-infobars" has been deprecated by newer Chrome versions
+        //options.setHeadless(true);
+        return options;
+    }
+
+    private void setCookie(){
+        Cookie cookie = new Cookie.Builder("tau","123")
+                .domain("the-internet.herokuapp.com")
+                .build();
+        driver.manage().addCookie(cookie);
+    }
 }
